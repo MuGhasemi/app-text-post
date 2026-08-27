@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from uuid import UUID
 
 
 class Create_Post(BaseModel):
@@ -7,5 +8,6 @@ class Create_Post(BaseModel):
 
 
 class Responce_Post(BaseModel):
+    id: UUID
     title: str
     description: str
