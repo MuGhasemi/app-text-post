@@ -5,8 +5,10 @@ app = FastAPI(
     title="Text Post App",
     docs_url="/documentation",
     redoc_url=None)
+
 app.include_router(router)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+##### for local test ####
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="127.0.0.1", port=8000)
