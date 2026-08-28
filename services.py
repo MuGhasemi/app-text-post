@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import Responce_Post, Create_Post
+from schemas import Responce_Post, Create_Post, Update_Post
 from sqlalchemy.orm import Session
 from db import get_db, Post
 
@@ -31,10 +31,17 @@ def create_new_post(data: Create_Post, db: Session = Depends(get_db)) -> Responc
     return db_post
 
 
-# not complete
-@router.put("/{title}")
-def update_post(title: str):
-    pass
+@router.put("/{title}", response_model=Responce_Post)
+def update_post(title: str, data: Update_Post, db: Session = Depends(get_db)) -> Responce_Post:
+    post = db.query(Post).filter(Post.title == title).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found!")
+    updated_filed = data.model_dump(exclude_unset=True)
+    for key, value in updated_filed.items():
+        setattr(post, key, value)
+    db.commit()
+    db.refresh(post)
+    return post
 
 
 @router.delete("/{title}", response_model=Responce_Post)

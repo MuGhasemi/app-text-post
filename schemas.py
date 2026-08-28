@@ -11,3 +11,8 @@ class Responce_Post(BaseModel):
     id: UUID
     title: str
     description: str
+
+
+class Update_Post(BaseModel):
+    title: str | None = None
+    description: str | None = None
