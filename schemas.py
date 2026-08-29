@@ -1,18 +1,22 @@
 from pydantic import BaseModel
 from uuid import UUID
 
-
-class Create_Post(BaseModel):
+class CreatePost(BaseModel):
     title: str
     description: str
 
 
-class Responce_Post(BaseModel):
+class ResponcePost(BaseModel):
     id: UUID
     title: str
     description: str
 
 
-class Update_Post(BaseModel):
+class UpdatePost(BaseModel):
     title: str | None = None
     description: str | None = None
+
+
+class CreateUser(BaseModel):
+    username: str
+    password: str
