@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import (ResponcePost, CreatePost, UpdatePost,)
+from schemas import (ResponcePost, CreatePost, UpdatePost,
+                     CreateUser,)
 from sqlalchemy.orm import Session
-from db import get_db, Post
+from db import get_db, Post, User
 
 post_router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
+user_router: APIRouter = APIRouter(prefix="/user", tags=["users"])
 
 
 @post_router.get("/")
@@ -52,3 +54,18 @@ def delete_post(title: str, db: Session = Depends(get_db)) -> ResponcePost:
     return post
 
 
+@user_router.get("/")
+def get_user(db: Session = Depends(get_db)):
+    users: list[User] = db.query(User).all()
+    if users is None:
+        raise HTTPException(status_code=404, detail="Not users!")
+    return users
+
+
+@user_router.post("/sign_up")
+def create_user(data: CreateUser, db: Session = Depends(get_db)):
+    db_user: User = User(**data.model_dump())
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
