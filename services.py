@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import Responce_Post, Create_Post, Update_Post
+from schemas import (ResponcePost, CreatePost, UpdatePost,)
 from sqlalchemy.orm import Session
 from db import get_db, Post
 
-router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
+post_router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
 
 
-@router.get("/")
+@post_router.get("/")
 def get_posts(db: Session = Depends(get_db)):
     posts: list[Post] = db.query(Post).all()
     if posts is None:
@@ -14,16 +14,16 @@ def get_posts(db: Session = Depends(get_db)):
     return posts
 
 
-@router.get("/{title}")
-def get_post_by_title(title: str, db: Session = Depends(get_db)) -> Responce_Post:
+@post_router.get("/{title}")
+def get_post_by_title(title: str, db: Session = Depends(get_db)) -> ResponcePost:
     post: Post = db.query(Post).filter(Post.title == title).first()
     if post is None:
         raise HTTPException(status_code=404, detail="post not found!")
     return post
 
 
-@router.post("/new", response_model=Responce_Post)
-def create_new_post(data: Create_Post, db: Session = Depends(get_db)) -> Responce_Post:
+@post_router.post("/new", response_model=ResponcePost)
+def create_new_post(data: CreatePost, db: Session = Depends(get_db)) -> ResponcePost:
     db_post: Post = Post(**data.model_dump())
     db.add(db_post)
     db.commit()
@@ -31,8 +31,8 @@ def create_new_post(data: Create_Post, db: Session = Depends(get_db)) -> Responc
     return db_post
 
 
-@router.put("/{title}", response_model=Responce_Post)
-def update_post(title: str, data: Update_Post, db: Session = Depends(get_db)) -> Responce_Post:
+@post_router.put("/{title}", response_model=ResponcePost)
+def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db)) -> ResponcePost:
     post = db.query(Post).filter(Post.title == title).first()
     if post is None:
         raise HTTPException(status_code=404, detail="post not found!")
@@ -44,9 +44,11 @@ def update_post(title: str, data: Update_Post, db: Session = Depends(get_db)) ->
     return post
 
 
-@router.delete("/{title}", response_model=Responce_Post)
-def delete_post(title: str, db: Session = Depends(get_db)) -> Responce_Post:
+@post_router.delete("/{title}", response_model=ResponcePost)
+def delete_post(title: str, db: Session = Depends(get_db)) -> ResponcePost:
     post: Post = db.query(Post).filter(Post.title == title).first()
     db.delete(post)
     db.commit()
     return post
+
+
