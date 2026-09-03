@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String
+from sqlalchemy import create_engine, Column, String, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -22,8 +22,9 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    username = Column(String, unique=True)
-    password = Column(String)
+    username = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
 
 
 Base.metadata.create_all(bind=engine)
