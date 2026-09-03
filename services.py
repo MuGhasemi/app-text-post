@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from schemas import (ResponcePost, CreatePost, UpdatePost,
-                     CreateUser,)
+                     CreateUser, Token)
 from sqlalchemy.orm import Session
 from db import get_db, Post, User
+from security import verify_password, create_access_token, hash_password
 
 post_router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
 user_router: APIRouter = APIRouter(prefix="/user", tags=["users"])
@@ -54,18 +55,33 @@ def delete_post(title: str, db: Session = Depends(get_db)) -> ResponcePost:
     return post
 
 
-@user_router.get("/")
-def get_user(db: Session = Depends(get_db)):
-    users: list[User] = db.query(User).all()
-    if users is None:
-        raise HTTPException(status_code=404, detail="Not users!")
-    return users
+def get_user(username: str, db: Session = Depends(get_db)) -> User:
+    return db.query(User).filter(User.username == username).first()
 
 
 @user_router.post("/sign_up")
-def create_user(data: CreateUser, db: Session = Depends(get_db)):
-    db_user: User = User(**data.model_dump())
+def signup(data: CreateUser, db: Session = Depends(get_db)):
+    db_user: User = get_user(data.username, db)
+    if db_user:
+        raise HTTPException(
+            status_code=400, detail="Username already registered")
+    db_user: User = User(username=data.username,
+                         hashed_password=hash_password(data.password))
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+@user_router.get("/login", response_model=Token)
+def login(username: str, password: str, db: Session = Depends(get_db)):
+    user: User = get_user(username, db)
+    if user is None:
+        raise HTTPException(
+            status_code=401, detail="invalid username or password")
+    if not verify_password(password, str(user.hashed_password)):
+        raise HTTPException(
+            status_code=401, detail="invalid username or password")
+    access_token = create_access_token({"sub": str(user.id)})
+    return {"access_token": access_token,
+            "token_type": "bearer", }
