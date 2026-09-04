@@ -3,14 +3,19 @@ from schemas import (ResponcePost, CreatePost, UpdatePost,
                      CreateUser, Token)
 from sqlalchemy.orm import Session
 from db import get_db, Post, User
-from security import verify_password, create_access_token, hash_password
+from security import (verify_password,
+                      create_access_token,
+                      hash_password,
+                      get_user,
+                      get_current_user)
+
 
 post_router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
 user_router: APIRouter = APIRouter(prefix="/user", tags=["users"])
 
 
 @post_router.get("/")
-def get_posts(db: Session = Depends(get_db)):
+def get_posts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     posts: list[Post] = db.query(Post).all()
     if posts is None:
         raise HTTPException(status_code=404, detail="Not Posts!")
@@ -55,12 +60,8 @@ def delete_post(title: str, db: Session = Depends(get_db)) -> ResponcePost:
     return post
 
 
-def get_user(username: str, db: Session = Depends(get_db)) -> User:
-    return db.query(User).filter(User.username == username).first()
-
-
 @user_router.post("/sign_up")
-def signup(data: CreateUser, db: Session = Depends(get_db)):
+def sign_up(data: CreateUser, db: Session = Depends(get_db)):
     db_user: User = get_user(data.username, db)
     if db_user:
         raise HTTPException(
@@ -73,15 +74,15 @@ def signup(data: CreateUser, db: Session = Depends(get_db)):
     return db_user
 
 
-@user_router.get("/login", response_model=Token)
-def login(username: str, password: str, db: Session = Depends(get_db)):
-    user: User = get_user(username, db)
+@user_router.post("/login", response_model=Token)
+def login(data: CreateUser, db: Session = Depends(get_db)):
+    user: User = get_user(data.username, db)
     if user is None:
         raise HTTPException(
             status_code=401, detail="invalid username or password")
-    if not verify_password(password, str(user.hashed_password)):
+    if not verify_password(data.password, str(user.hashed_password)):
         raise HTTPException(
             status_code=401, detail="invalid username or password")
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token({"sub": str(user.username)})
     return {"access_token": access_token,
             "token_type": "bearer", }
