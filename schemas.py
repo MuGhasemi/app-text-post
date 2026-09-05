@@ -5,12 +5,14 @@ from uuid import UUID
 class CreatePost(BaseModel):
     title: str
     description: str
+    owner_id: UUID
 
 
 class ResponcePost(BaseModel):
     id: UUID
     title: str
     description: str
+    owner_id: UUID
 
 
 class UpdatePost(BaseModel):
