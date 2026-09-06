@@ -15,24 +15,31 @@ user_router: APIRouter = APIRouter(prefix="/user", tags=["users"])
 
 
 @post_router.get("/")
-def get_posts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    posts: list[Post] = db.query(Post).all()
+def get_all_posts_current_user(db: Session = Depends(get_db),
+                               current_user: User = Depends(get_current_user)):
+    posts: list[Post] = db.query(Post).filter(
+        Post.owner_id == current_user.id).all()
     if posts is None:
         raise HTTPException(status_code=404, detail="Not Posts!")
     return posts
 
 
 @post_router.get("/{title}")
-def get_post_by_title(title: str, db: Session = Depends(get_db)) -> ResponcePost:
-    post: Post = db.query(Post).filter(Post.title == title).first()
-    if post is None:
+def get_post_by_title(title: str, db: Session = Depends(get_db),
+                      current_user: User = Depends(get_current_user)) -> ResponcePost:
+    post: Post = db.query(Post).filter(
+        Post.title == title, Post.owner_id == current_user.id).first()
+    if not post:
         raise HTTPException(status_code=404, detail="post not found!")
     return post
 
 
 @post_router.post("/new", response_model=ResponcePost)
-def create_new_post(data: CreatePost, db: Session = Depends(get_db)) -> ResponcePost:
+def create_new_post(data: CreatePost, db: Session = Depends(get_db),
+                    current_user: User = Depends(get_current_user)) -> ResponcePost:
     db_post: Post = Post(**data.model_dump())
+    if current_user.id != db_post.owner_id:
+        raise HTTPException(status_code=400, detail="bad request!")
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -40,8 +47,10 @@ def create_new_post(data: CreatePost, db: Session = Depends(get_db)) -> Responce
 
 
 @post_router.put("/{title}", response_model=ResponcePost)
-def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db)) -> ResponcePost:
-    post = db.query(Post).filter(Post.title == title).first()
+def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)) -> ResponcePost:
+    post = db.query(Post).filter(Post.title == title,
+                                 Post.owner_id == current_user.id).first()
     if post is None:
         raise HTTPException(status_code=404, detail="post not found!")
     updated_filed = data.model_dump(exclude_unset=True)
@@ -53,8 +62,12 @@ def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db)) -> 
 
 
 @post_router.delete("/{title}", response_model=ResponcePost)
-def delete_post(title: str, db: Session = Depends(get_db)) -> ResponcePost:
-    post: Post = db.query(Post).filter(Post.title == title).first()
+def delete_post(title: str, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)) -> ResponcePost:
+    post: Post = db.query(Post).filter(
+        Post.title == title, Post.owner_id == current_user.id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found!")
     db.delete(post)
     db.commit()
     return post
@@ -85,4 +98,5 @@ def login(data: CreateUser, db: Session = Depends(get_db)):
             status_code=401, detail="invalid username or password")
     access_token = create_access_token({"sub": str(user.username)})
     return {"access_token": access_token,
-            "token_type": "bearer", }
+            "token_type": "bearer",
+            "user_id": user.id}
