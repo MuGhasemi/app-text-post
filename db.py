@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey
-from sqlalchemy.orm import sessionmaker, relationship, declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
@@ -14,11 +14,11 @@ Base = declarative_base()
 class Post(Base):
     __tablename__ = "posts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True,
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
                 index=True, default=uuid.uuid4)
     title = Column(String)
     description = Column(String)
-    owner_id = Column(UUID(as_uuid=True), ForeignKey(
+    owner_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey(
         "users.id"), nullable=False)
     owner = relationship("User", back_populates="items")
 
@@ -26,7 +26,7 @@ class Post(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True,
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
                 index=True, default=uuid.uuid4)
     username = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
