@@ -19,7 +19,7 @@ def get_all_posts_current_user(db: Session = Depends(get_db),
                                current_user: User = Depends(get_current_user)):
     posts: list[Post] = db.query(Post).filter(
         Post.owner_id == current_user.id).all()
-    if posts is None:
+    if not posts:
         raise HTTPException(status_code=404, detail="Not Posts!")
     return posts
 
@@ -29,7 +29,7 @@ def get_post_by_title(title: str, db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user)) -> ResponcePost:
     post: Post = db.query(Post).filter(
         Post.title == title, Post.owner_id == current_user.id).first()
-    if not post:
+    if post is None:
         raise HTTPException(status_code=404, detail="post not found!")
     return post
 
@@ -71,6 +71,14 @@ def delete_post(title: str, db: Session = Depends(get_db),
     db.delete(post)
     db.commit()
     return post
+
+
+@post_router.get("/explore")
+def explore(db: Session = Depends(get_db)):
+    posts: list[Post] = db.query(Post).all()[:10]
+    if not posts:
+        raise HTTPException(status_code=404, detail="Not Posts!")
+    return posts
 
 
 @user_router.post("/sign_up")
