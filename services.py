@@ -8,6 +8,7 @@ from security import (verify_password,
                       hash_password,
                       get_user,
                       get_current_user)
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 post_router: APIRouter = APIRouter(prefix="/posts", tags=["posts"])
@@ -96,7 +97,7 @@ def sign_up(data: CreateUser, db: Session = Depends(get_db)):
 
 
 @user_router.post("/login", response_model=Token)
-def login(data: CreateUser, db: Session = Depends(get_db)):
+def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user: User = get_user(data.username, db)
     if user is None:
         raise HTTPException(
