@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import datetime
 
 
 class CreatePost(BaseModel):
     title: str
     description: str
-    owner_id: UUID
 
 
 class ResponcePost(BaseModel):
@@ -13,6 +13,8 @@ class ResponcePost(BaseModel):
     title: str
     description: str
     owner_id: UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 class UpdatePost(BaseModel):

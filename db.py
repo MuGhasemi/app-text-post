@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
+from datetime import datetime, timezone
 import uuid
 
 
@@ -15,9 +16,13 @@ class Post(Base):
     __tablename__ = "posts"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
-                index=True, default=uuid.uuid4)
+                                     index=True, default=uuid.uuid4)
     title = Column(String)
     description = Column(String)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     owner_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey(
         "users.id"), nullable=False)
     owner = relationship("User", back_populates="items")
@@ -27,10 +32,14 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
-                index=True, default=uuid.uuid4)
+                                     index=True, default=uuid.uuid4)
     username = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     items = relationship("Post", back_populates="owner",
                          cascade="all, delete-orphan")
 
