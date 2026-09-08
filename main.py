@@ -10,11 +10,6 @@ app.include_router(post_router)
 app.include_router(user_router)
 
 
-@app.get("/says")
-def love():
-    return {"muhammad": "I Love You MAEDEW."}
-
-
 ##### for local test ####
 # if __name__ == "__main__":
 #     import uvicorn
