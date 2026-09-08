@@ -46,7 +46,9 @@ def get_post_by_title(title: str, db: Session = Depends(get_db),
 @post_router.post("/new", response_model=ResponcePost)
 def create_new_post(data: CreatePost, db: Session = Depends(get_db),
                     current_user: User = Depends(get_current_user)) -> ResponcePost:
-    db_post: Post = Post(**data.model_dump())
+    db_post: Post = Post(title=data.title,
+                         description=data.description,
+                         owner=current_user.id)
     if current_user.id != db_post.owner_id:
         raise HTTPException(status_code=400, detail="bad request!")
     db.add(db_post)
