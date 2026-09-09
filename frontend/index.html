@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TextPost</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- ================= LOGIN ================= -->
+
+    <section id="login-page" class="auth-page">
+
+        <div class="auth-background"></div>
+
+        <div class="auth-card">
+
+            <div class="logo">
+                <span class="logo-icon">✦</span>
+                <span>TextPost</span>
+            </div>
+
+            <p class="auth-subtitle">
+                Share your thoughts, simply.
+            </p>
+
+            <form id="login-form">
+
+                <div class="input-group">
+                    <label>Username</label>
+                    <input
+                        id="login-username"
+                        type="text"
+                        placeholder="Enter your username"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input
+                        id="login-password"
+                        type="password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <button class="primary-button" type="submit">
+                    Login
+                </button>
+
+                <p id="login-error" class="error-message"></p>
+
+            </form>
+
+            <p class="auth-switch">
+                Don't have an account?
+                <button id="show-signup" class="text-button">
+                    Sign up
+                </button>
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================= SIGN UP ================= -->
+
+    <section id="signup-page" class="auth-page hidden">
+
+        <div class="auth-background"></div>
+
+        <div class="auth-card">
+
+            <div class="logo">
+                <span class="logo-icon">✦</span>
+                <span>TextPost</span>
+            </div>
+
+            <p class="auth-subtitle">
+                Create your account.
+            </p>
+
+            <form id="signup-form">
+
+                <div class="input-group">
+                    <label>Username</label>
+                    <input
+                        id="signup-username"
+                        type="text"
+                        placeholder="Choose a username"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Choose a password"
+                        required
+                    >
+                </div>
+
+                <button class="primary-button" type="submit">
+                    Create account
+                </button>
+
+                <p id="signup-error" class="error-message"></p>
+
+            </form>
+
+            <p class="auth-switch">
+                Already have an account?
+                <button id="show-login" class="text-button">
+                    Login
+                </button>
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================= APPLICATION ================= -->
+
+    <section id="app-page" class="hidden">
+
+        <aside class="sidebar">
+
+            <div class="sidebar-logo">
+                <span class="logo-icon">✦</span>
+                <span>TextPost</span>
+            </div>
+
+            <nav>
+
+                <button class="nav-item active" data-page="home">
+                    <span>⌂</span>
+                    Home
+                </button>
+
+                <button class="nav-item" data-page="explore">
+                    <span>⌕</span>
+                    Explore
+                </button>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+
+                <button id="new-post-button" class="new-post-button">
+                    <span>+</span>
+                    New Post
+                </button>
+
+                <button id="logout-button" class="logout-button">
+                    Logout
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <!-- HEADER -->
+
+            <header class="topbar">
+
+                <div class="mobile-logo">
+                    <span class="logo-icon">✦</span>
+                    TextPost
+                </div>
+
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        id="search-input"
+                        type="text"
+                        placeholder="Search posts..."
+                    >
+                </div>
+
+                <div class="user-mini">
+                    <div id="current-username" class="user-avatar">
+                        U
+                    </div>
+                </div>
+
+            </header>
+
+
+            <!-- ================= HOME ================= -->
+
+            <section id="home-content" class="content-page">
+
+                <div class="page-heading">
+                    <div>
+                        <h1>Your Posts</h1>
+                        <p>Your latest thoughts and posts.</p>
+                    </div>
+
+                    <button class="small-button" id="refresh-home">
+                        Refresh
+                    </button>
+                </div>
+
+                <div id="home-posts" class="posts-container">
+
+                    <div class="loading">
+                        Loading posts...
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= EXPLORE ================= -->
+
+            <section id="explore-content" class="content-page hidden">
+
+                <div class="page-heading">
+
+                    <div>
+                        <h1>Explore</h1>
+                        <p>Discover posts from the community.</p>
+                    </div>
+
+                    <button class="small-button" id="refresh-explore">
+                        Refresh
+                    </button>
+
+                </div>
+
+                <div id="explore-posts" class="posts-container">
+
+                    <div class="loading">
+                        Loading posts...
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= NEW POST ================= -->
+
+            <section id="new-post-content" class="content-page hidden">
+
+                <div class="page-heading">
+
+                    <div>
+                        <h1>Create Post</h1>
+                        <p>Share something with the community.</p>
+                    </div>
+
+                </div>
+
+                <div class="editor-card">
+
+                    <form id="new-post-form">
+
+                        <div class="input-group">
+                            <label>Title</label>
+
+                            <input
+                                id="post-title"
+                                type="text"
+                                placeholder="Post title"
+                                required
+                            >
+                        </div>
+
+                        <div class="input-group">
+                            <label>Content</label>
+
+                            <textarea
+                                id="post-description"
+                                placeholder="Write something..."
+                                rows="8"
+                                required
+                            ></textarea>
+
+                        </div>
+
+                        <div class="editor-actions">
+
+                            <button
+                                type="button"
+                                class="secondary-button"
+                                id="cancel-post"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="primary-button"
+                            >
+                                Publish Post
+                            </button>
+
+                        </div>
+
+                        <p id="new-post-error" class="error-message"></p>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+            <!-- ================= POST DETAIL ================= -->
+
+            <section id="post-detail-content" class="content-page hidden">
+
+                <button id="back-button" class="back-button">
+                    ← Back
+                </button>
+
+                <div id="post-detail"></div>
+
+            </section>
+
+        </main>
+
+    </section>
+
+</div>
+
+
+<!-- TOAST -->
+
+<div id="toast" class="toast"></div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
