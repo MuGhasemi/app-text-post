@@ -12,6 +12,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
 SECRET_KEY = "J+5Nw+gWUmDUZIbNqDkdKyKqL3A+OWRUCUyl+jH8pGE"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+BLACKLISTED_TOKENS = set()
 
 
 def hash_password(password: str) -> str:
@@ -40,6 +41,8 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if token in BLACKLISTED_TOKENS:
+        raise credentials_exception
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str | None = payload.get("sub")
