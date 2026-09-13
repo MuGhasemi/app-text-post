@@ -8,7 +8,7 @@ class CreatePost(BaseModel):
     description: str
 
 
-class ResponcePost(BaseModel):
+class ResponsePost(BaseModel):
     id: UUID
     title: str
     description: str
@@ -25,6 +25,14 @@ class UpdatePost(BaseModel):
 class CreateUser(BaseModel):
     username: str
     password: str
+
+
+class UserProfile(BaseModel):
+    username : str
+
+
+class UpdateUser(BaseModel):
+    username: str
 
 
 class Token(BaseModel):

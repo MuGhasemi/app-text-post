@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from schemas import (ResponsePost, CreatePost, UpdatePost,
-                     CreateUser, Token)
+                     CreateUser, Token, UserProfile, UpdateUser)
 from sqlalchemy.orm import Session
 from db import get_db, Post, User
 from fastapi.security import OAuth2PasswordRequestForm
@@ -125,3 +125,16 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 def logout(token: str = Depends(oauth2_scheme)):
     BLACKLISTED_TOKENS.add(token)
     return {"message": "Logged out successfully"}
+
+
+@user_router.put("/profile", response_model=UserProfile, status_code=status.HTTP_200_OK)
+def profile(data: UpdateUser, db: Session = Depends(get_db),
+            current_user: User = Depends(get_current_user)) -> UserProfile:
+    db_user = db.query(User).filter(User.id == current_user.id).first()
+    updated_filed = data.model_dump(exclude_unset=True)
+    for key, value in updated_filed.items():
+        setattr(db_user, key, value)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
