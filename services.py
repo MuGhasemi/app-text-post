@@ -127,8 +127,18 @@ def logout(token: str = Depends(oauth2_scheme)):
     return {"message": "Logged out successfully"}
 
 
+@user_router.get("/profile", response_model=UserProfile, status_code=status.HTTP_200_OK)
+def get_user_detail(db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)) -> UserProfile:
+    db_user = db.query(User).filter(User.id == current_user.id).first()
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+    return db_user
+
+
 @user_router.put("/profile", response_model=UserProfile, status_code=status.HTTP_200_OK)
-def profile(data: UpdateUser, db: Session = Depends(get_db),
+def update_user_detail(data: UpdateUser, db: Session = Depends(get_db),
             current_user: User = Depends(get_current_user)) -> UserProfile:
     db_user = db.query(User).filter(User.id == current_user.id).first()
     updated_filed = data.model_dump(exclude_unset=True)
