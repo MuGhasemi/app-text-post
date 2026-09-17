@@ -154,6 +154,11 @@
                     Explore
                 </button>
 
+                <button class="nav-item" data-page="profile">
+                    <span>◎</span>
+                    Profile
+                </button>
+
             </nav>
 
             <div class="sidebar-bottom">
@@ -332,6 +337,57 @@
                 </button>
 
                 <div id="post-detail"></div>
+
+            </section>
+            <!-- ================= PROFILE ================= -->
+            <section id="profile-content" class="content-page hidden">
+
+                <div class="page-heading">
+
+                    <div>
+                        <h1>Profile</h1>
+                        <p>Manage your account.</p>
+                    </div>
+
+                </div>
+
+
+                <div class="profile-card">
+
+                    <div class="profile-avatar">
+                        <span id="profile-avatar-letter">U</span>
+                    </div>
+
+
+                    <div class="profile-form">
+
+                        <label for="profile-username">
+                            Username
+                        </label>
+
+                        <input
+                            id="profile-username"
+                            type="text"
+                            placeholder="Your username"
+                            autocomplete="off"
+                        >
+
+                        <p
+                            id="profile-error"
+                            class="error-message"
+                        ></p>
+
+                        <button
+                            id="save-profile-button"
+                            class="primary-button"
+                            type="button"
+                        >
+                            Save username
+                        </button>
+
+                    </div>
+
+                </div>
 
             </section>
 

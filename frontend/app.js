@@ -26,6 +26,7 @@ const homeContent = document.getElementById("home-content");
 const exploreContent = document.getElementById("explore-content");
 const newPostContent = document.getElementById("new-post-content");
 const postDetailContent = document.getElementById("post-detail-content");
+const profileContent = document.getElementById("profile-content");
 
 
 /* =====================================================
@@ -235,18 +236,10 @@ function showApp() {
 
 document
     .getElementById("logout-button")
-    .addEventListener("click", () => {
-
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("username");
-
-        accessToken = null;
-        currentUsername = null;
-
-        appPage.classList.add("hidden");
-        loginPage.classList.remove("hidden");
-
-    });
+    .addEventListener(
+        "click",
+        logout
+    );
 
 
 /* =====================================================
@@ -281,6 +274,12 @@ document
 
             }
 
+            if (page === "profile") {
+
+                profileContent.classList.remove("hidden");
+
+                loadProfile();
+            }
         });
 
     });
@@ -306,10 +305,150 @@ function hideAllContent() {
     exploreContent.classList.add("hidden");
     newPostContent.classList.add("hidden");
     postDetailContent.classList.add("hidden");
+    profileContent.classList.add("hidden");
 
 }
 
 
+/* =====================================================
+   PROFILE
+===================================================== */
+
+async function loadProfile() {
+
+
+    const usernameInput =
+        document.getElementById("profile-username");
+
+    const avatar =
+        document.getElementById("profile-avatar-letter");
+
+    const errorElement =
+        document.getElementById("profile-error");
+
+    errorElement.textContent = "";
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/user/profile`,
+            {
+                method: "GET",
+
+                headers: {
+                    "Authorization":
+                        `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+
+            throw new Error(
+                data.detail ||
+                "Could not load profile"
+            );
+        }
+
+        usernameInput.value = data.username;
+
+        avatar.textContent =
+            data.username
+                ? data.username
+                    .charAt(0)
+                    .toUpperCase()
+                : "U";
+
+    } catch (error) {
+
+        errorElement.textContent =
+            error.message;
+
+    }
+}
+
+
+async function updateUsername() {
+
+    const usernameInput =
+        document.getElementById("profile-username");
+
+    const errorElement =
+        document.getElementById("profile-error");
+
+    const newUsername =
+        usernameInput.value.trim();
+
+    errorElement.textContent = "";
+
+    if (!newUsername) {
+
+        errorElement.textContent =
+            "Username cannot be empty.";
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/user/profile`,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    "Authorization":
+                        `Bearer ${accessToken}`
+                },
+
+                body: JSON.stringify({
+                    username: newUsername
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "Could not update username"
+            );
+        }
+
+        /*
+         * Username changed successfully.
+         *
+         * The current JWT contains the old username,
+         * so we logout and ask the user to login again.
+         */
+
+        await logout();
+
+    } catch (error) {
+
+        errorElement.textContent =
+            error.message;
+
+    }
+}
+
+document
+    .getElementById("save-profile-button")
+    .addEventListener("click", updateUsername);
+
+    
 /* =====================================================
    NEW POST PAGE
 ===================================================== */
@@ -1064,18 +1203,55 @@ function showToast(message) {
 }
 
 
-function logout() {
+async function logout() {
 
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("username");
+    try {
 
-    accessToken = null;
-    currentUsername = null;
+        if (accessToken) {
 
-    appPage.classList.add("hidden");
+            await fetch(
+                `${API_URL}/user/logout`,
+                {
+                    method: "POST",
 
-    loginPage.classList.remove("hidden");
+                    headers: {
+                        "Authorization":
+                            `Bearer ${accessToken}`
+                    }
+                }
+            );
 
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Logout request failed:",
+            error
+        );
+
+    } finally {
+
+        localStorage.removeItem(
+            "access_token"
+        );
+
+        localStorage.removeItem(
+            "username"
+        );
+
+        accessToken = null;
+        currentUsername = null;
+
+        appPage.classList.add("hidden");
+
+        loginPage.classList.remove("hidden");
+
+        document
+            .getElementById("login-form")
+            .reset();
+
+    }
 }
 
 
