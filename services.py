@@ -18,8 +18,14 @@ user_router: APIRouter = APIRouter(prefix="/user", tags=["users"])
 
 
 @post_router.get("/explore", status_code=status.HTTP_200_OK)
-def explore(db: Session = Depends(get_db)):
-    posts: list[Post] = db.query(Post).all()[:10]
+def explore(search: str | None = None, db: Session = Depends(get_db)):
+    if search is not None:
+        posts: list[Post] = db.query(Post).filter(Post.title == search).all()
+        if not posts:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
+        return posts
+    posts: list[Post] = db.query(Post).all()
     if not posts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
@@ -27,8 +33,16 @@ def explore(db: Session = Depends(get_db)):
 
 
 @post_router.get("/", status_code=status.HTTP_200_OK)
-def get_all_posts_current_user(db: Session = Depends(get_db),
+def get_all_posts_current_user(search: str | None = None,
+                               db: Session = Depends(get_db),
                                current_user: User = Depends(get_current_user)):
+    if search is not None:
+        posts: list[Post] = db.query(Post).filter(
+            Post.owner_id == current_user.id, Post.title == search).all()
+        if not posts:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
+        return posts
     posts: list[Post] = db.query(Post).filter(
         Post.owner_id == current_user.id).all()
     if not posts:
@@ -129,7 +143,7 @@ def logout(token: str = Depends(oauth2_scheme)):
 
 @user_router.get("/profile", response_model=UserProfile, status_code=status.HTTP_200_OK)
 def get_user_detail(db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)) -> UserProfile:
+                    current_user: User = Depends(get_current_user)) -> UserProfile:
     db_user = db.query(User).filter(User.id == current_user.id).first()
     if db_user is None:
         raise HTTPException(
@@ -139,7 +153,7 @@ def get_user_detail(db: Session = Depends(get_db),
 
 @user_router.put("/profile", response_model=UserProfile, status_code=status.HTTP_200_OK)
 def update_user_detail(data: UpdateUser, db: Session = Depends(get_db),
-            current_user: User = Depends(get_current_user)) -> UserProfile:
+                       current_user: User = Depends(get_current_user)) -> UserProfile:
     db_user = db.query(User).filter(User.id == current_user.id).first()
     updated_filed = data.model_dump(exclude_unset=True)
     for key, value in updated_filed.items():

@@ -2,8 +2,8 @@
    CONFIG
 ===================================================== */
 
-// const API_URL = "http://127.0.0.1:8000";
-const API_URL = "https://app-text-post.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
+// const API_URL = "https://app-text-post.onrender.com";
 
 
 /* =====================================================
@@ -246,6 +246,8 @@ document
    NAVIGATION
 ===================================================== */
 
+let currentPage = "home";
+
 document
     .querySelectorAll(".nav-item")
     .forEach(button => {
@@ -253,6 +255,8 @@ document
         button.addEventListener("click", () => {
 
             const page = button.dataset.page;
+            
+            currentPage = page  
 
             setActiveNav(button);
 
@@ -557,7 +561,7 @@ document
    HOME POSTS
 ===================================================== */
 
-async function loadHomePosts() {
+async function loadHomePosts(search = null) {
 
     const container =
         document.getElementById("home-posts");
@@ -565,11 +569,16 @@ async function loadHomePosts() {
     container.innerHTML =
         `<div class="loading">Loading posts...</div>`;
 
-
     try {
 
+        let url = `${API_URL}/posts`;
+
+        if (search) {
+            url += `?search=${encodeURIComponent(search)}`;
+        }
+
         const response = await fetch(
-            `${API_URL}/posts/`,
+            url,
             {
                 headers: {
                     "Authorization":
@@ -578,9 +587,7 @@ async function loadHomePosts() {
             }
         );
 
-
         const data = await response.json();
-
 
         if (!response.ok) {
 
@@ -594,9 +601,7 @@ async function loadHomePosts() {
             throw new Error(
                 data.detail || "Could not load posts"
             );
-
         }
-
 
         renderPosts(container, data);
 
@@ -606,9 +611,7 @@ async function loadHomePosts() {
             `<div class="empty-state">
                 ${error.message}
             </div>`;
-
     }
-
 }
 
 
@@ -616,7 +619,7 @@ async function loadHomePosts() {
    EXPLORE POSTS
 ===================================================== */
 
-async function loadExplorePosts() {
+async function loadExplorePosts(search = null) {
 
     const container =
         document.getElementById("explore-posts");
@@ -624,25 +627,24 @@ async function loadExplorePosts() {
     container.innerHTML =
         `<div class="loading">Loading posts...</div>`;
 
-
     try {
 
-        const response = await fetch(
-            `${API_URL}/posts/explore`
-        );
+        let url = `${API_URL}/posts/explore`;
 
+        if (search) {
+            url += `?search=${encodeURIComponent(search)}`;
+        }
+
+        const response = await fetch(url);
 
         const data = await response.json();
-
 
         if (!response.ok) {
 
             throw new Error(
                 data.detail || "Could not load posts"
             );
-
         }
-
 
         renderPosts(container, data);
 
@@ -652,10 +654,40 @@ async function loadExplorePosts() {
             `<div class="empty-state">
                 ${error.message}
             </div>`;
+    }
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+const searchInput =
+    document.getElementById("search-input");
+
+
+searchInput.addEventListener("keydown", function(event) {
+
+    if (event.key !== "Enter") {
+        return;
+    }
+
+    const search =
+        searchInput.value.trim();
+
+    if (currentPage === "explore") {
+
+        loadExplorePosts(search || null);
 
     }
 
-}
+    if (currentPage === "home") {
+
+        loadHomePosts(search || null);
+
+    }
+
+});
 
 
 /* =====================================================
