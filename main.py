@@ -1,6 +1,8 @@
 from fastapi import FastAPI
-from services import post_router, user_router
+from routers.posts import router as post_router
+from routers.users import router as user_router
 from fastapi.middleware.cors import CORSMiddleware
+from db.database import create_database
 
 app = FastAPI(
     title="Text Post App",
@@ -16,12 +18,13 @@ app.add_middleware(
         "http://127.0.0.1:5500",
         "http://localhost:5500",
         "https://app-text-post-frontend.onrender.com"
-        ],
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    )
+)
 
+create_database()
 
 ##### for local test ####
 # if __name__ == "__main__":
