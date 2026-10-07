@@ -14,7 +14,7 @@ router: APIRouter = APIRouter(
 )
 
 
-@router.get("/explore", status_code=status.HTTP_200_OK)
+@router.get("/explore", status_code=status.HTTP_200_OK, response_model=list[ResponsePost])
 def route_of_explore(search: str | None = None, db: Session = Depends(get_db)):
     """
     Handle requests for exploring public posts.
@@ -29,7 +29,7 @@ def route_of_explore(search: str | None = None, db: Session = Depends(get_db)):
     return explore(search, db)
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponsePost])
 def route_of_get_all_posts_current_user(search: str | None = None, db: Session = Depends(get_db),
                                         current_user: User = Depends(get_current_user)):
     """
