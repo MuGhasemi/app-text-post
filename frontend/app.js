@@ -718,10 +718,10 @@ function renderPosts(container, posts) {
         card.className = "post-card";
 
 
-        const ownerId =
-            post.owner_id
-                ? String(post.owner_id).slice(0, 6)
-                : "U";
+        const username =
+            post.owner?.username || "User";
+        const avatarLetter =
+            username.charAt(0).toUpperCase();
 
 
         card.innerHTML = `
@@ -729,21 +729,18 @@ function renderPosts(container, posts) {
             <div class="post-header">
 
                 <div class="post-user">
-
                     <div class="post-avatar">
-                        ${ownerId.charAt(0).toUpperCase()}
+                        ${escapeHTML(avatarLetter)}
                     </div>
 
                     <div>
-
                         <div class="post-author">
-                            User ${ownerId}
+                            ${escapeHTML(username)}
                         </div>
 
                         <div class="post-date">
                             ${formatDate(post.created_at)}
                         </div>
-
                     </div>
 
                 </div>
@@ -751,7 +748,6 @@ function renderPosts(container, posts) {
                 <button class="post-menu">
                     ···
                 </button>
-
             </div>
 
 
@@ -1084,28 +1080,38 @@ async function deletePost(encodedTitle) {
 
 function renderPostDetail(container, post) {
 
+    const username =
+        post.owner?.username || "User";
+    const avatarLetter =
+        username.charAt(0).toUpperCase();
+
+
     container.innerHTML = `
 
         <article class="detail-card">
 
-            <div class="post-user">
+            <div class="post-header">
 
-                <div class="post-avatar">
-                    U
-                </div>
-
-                <div>
-
-                    <div class="post-author">
-                        User
+                <div class="post-user">
+                    <div class="post-avatar">
+                        ${escapeHTML(avatarLetter)}
                     </div>
 
-                    <div class="post-date">
-                        ${formatDate(post.created_at)}
+                    <div>
+                        <div class="post-author">
+                            ${escapeHTML(username)}
+                        </div>
+
+                        <div class="post-date">
+                            ${formatDate(post.created_at)}
+                        </div>
                     </div>
 
                 </div>
 
+                <button class="post-menu">
+                    ···
+                </button>
             </div>
 
 
