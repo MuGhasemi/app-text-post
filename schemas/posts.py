@@ -1,6 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
+
+
+class UserDisplay(BaseModel):
+    """
+    Schema returned when a post is retrieved.
+
+    Attributes:
+        username (str): Username of the User.
+    """
+    username: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CreatePost(BaseModel):
@@ -14,6 +26,8 @@ class CreatePost(BaseModel):
     title: str
     description: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ResponsePost(BaseModel):
     """
@@ -23,16 +37,18 @@ class ResponsePost(BaseModel):
         id (UUID): Unique post identifier.
         title (str): Title of the post.
         description (str): Post content.
-        owner_id (UUID): ID of the post owner.
+        owner (UserDisplay): User of the post owner.
         created_at (datetime): Post creation timestamp.
         updated_at (datetime): Last update timestamp.
     """
     id: UUID
     title: str
     description: str
-    owner_id: UUID
+    owner: UserDisplay
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UpdatePost(BaseModel):
@@ -48,3 +64,5 @@ class UpdatePost(BaseModel):
     """
     title: str | None = None
     description: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
