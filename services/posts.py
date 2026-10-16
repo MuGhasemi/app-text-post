@@ -1,117 +1,173 @@
 from fastapi import Depends, HTTPException, status
-from schemas.posts import ResponsePost, CreatePost, UpdatePost
+from schemas.posts import CreatePost, UpdatePost, DeletePost
 from sqlalchemy.orm import Session
 from models.posts import Post
 from models.users import User
+from models.likes import Like
 from dependencies import get_db
 from core.security import get_current_user
+from sqlalchemy import func
+from services.likes import number_of_post_likes
 
 
-def explore(search: str | None = None, db: Session = Depends(get_db)) -> list[Post] | None:
+def format_posts_with_likes(rows) -> list[dict[str, int]]:
     """
-    Retrieve public posts.
+    Convert query results into dictionaries for the post response.
 
-    If a search value is provided, only posts
-    matching the title are returned.
+    Each row contains a Post object and its like count.
+    The function extracts the required post fields and adds
+    the number of likes to each dictionary.
 
     Args:
-        search (str | None): Post title filter.
+        rows: Query results containing Post objects and like counts.
+
+    Returns:
+        list[dict]: Post data with owner information and like counts.
+    """
+    return [
+        {
+            "id": post.id,
+            "title": post.title,
+            "description": post.description,
+            "owner": post.owner,
+            "number_of_post_likes": like_count,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at,
+        }
+        for post, like_count in rows
+    ]
+
+
+def explore(search: str | None = None, db: Session = Depends(get_db)) -> list[dict[str, int]]:
+    """
+    Retrieve public posts with their like counts.
+
+    Optionally filter posts by an exact title match.
+    Include posts with zero likes in the results.
+
+    Args:
+        search (str | None): Optional exact title filter.
         db (Session): Database session.
 
     Returns:
-        list[Post]: List of matching posts.
+        list[dict]: Public posts with owner information and like counts.
 
     Raises:
         HTTPException:
-            If no posts are found.
+            404: If no matching posts are found.
     """
+    query = (
+        db.query(
+            Post,
+            func.count(Like.id).label("number_of_post_likes"),
+        )
+        .outerjoin(Like, Like.post_id == Post.id)
+    )
+
     if search is not None:
-        posts: list[Post] = db.query(Post).filter(Post.title == search).all()
-        if not posts:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
-        return posts
-    posts: list[Post] = db.query(Post).all()
-    if not posts:
+        query = query.filter(Post.title == search)
+
+    rows = query.group_by(Post.id).all()
+
+    if not rows:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
-    return posts
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Posts!",
+        )
+
+    return format_posts_with_likes(rows)
 
 
 def get_all_posts_current_user(search: str | None = None,
                                db: Session = Depends(get_db),
-                               current_user: User = Depends(get_current_user)) -> list[Post] | None:
+                               current_user: User = Depends(get_current_user)) -> list[dict[str, int]]:
     """
-    Retrieve all posts owned by the current user.
+    Retrieve posts owned by the authenticated user.
+
+    Optionally filter posts by an exact title match.
+    Include the like count for each post.
 
     Args:
-        search (str | None): Optional title filter.
+        search (str | None): Optional exact title filter.
         db (Session): Database session.
         current_user (User): Authenticated user.
 
     Returns:
-        list[Post]: User posts.
+        list[dict]: The user's posts with owner information and like counts.
 
     Raises:
         HTTPException:
-            If no posts are found.
+            404: If no matching posts are found.
     """
+    query = (
+        db.query(
+            Post,
+            func.count(Like.id).label("number_of_post_likes"),
+        )
+        .outerjoin(Like, Like.post_id == Post.id)
+        .filter(Post.owner_id == current_user.id)
+    )
+
     if search is not None:
-        posts: list[Post] = db.query(Post).filter(
-            Post.owner_id == current_user.id, Post.title == search).all()
-        if not posts:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
-        return posts
-    posts: list[Post] = db.query(Post).filter(
-        Post.owner_id == current_user.id).all()
-    if not posts:
+        query = query.filter(Post.title == search)
+
+    rows = query.group_by(Post.id).all()
+
+    if not rows:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Not Posts!")
-    return posts
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Posts!",
+        )
+
+    return format_posts_with_likes(rows)
 
 
 def get_post_by_title(title: str, db: Session = Depends(get_db),
-                      current_user: User = Depends(get_current_user)) -> ResponsePost:
+                      current_user: User = Depends(get_current_user)):
     """
-    Retrieve a single post by title.
+    Retrieve a post owned by the authenticated user.
+
+    Search for a post by its exact title and include its like count.
 
     Args:
-        title (str): Post title.
+        title (str): Exact title of the requested post.
         db (Session): Database session.
         current_user (User): Authenticated user.
 
     Returns:
-        ResponsePost: Requested post.
+        dict: Post data with owner information and like count.
 
     Raises:
         HTTPException:
-            If the post does not exist.
+            404: If no matching post is found.
     """
     post: Post = db.query(Post).filter(
         Post.title == title, Post.owner_id == current_user.id).first()
     if post is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="post not found!")
-    return post
+            status_code=status.HTTP_404_NOT_FOUND, detail="Post not found!")
+    return format_posts_with_likes([(post, number_of_post_likes(post.id, db))])[0] # type: ignore
 
 
 def create_new_post(data: CreatePost, db: Session = Depends(get_db),
-                    current_user: User = Depends(get_current_user)) -> ResponsePost:
+                    current_user: User = Depends(get_current_user)) -> CreatePost:
     """
     Create a new post for the authenticated user.
 
+    Store the post title, description, and owner ID in the database.
+
     Args:
-        data (CreatePost): Post data.
+        data (CreatePost): Request data containing the post title
+            and description.
         db (Session): Database session.
         current_user (User): Authenticated user.
 
     Returns:
-        ResponsePost: Created post.
+        CreatePost: The created post data.
 
     Raises:
         HTTPException:
-            If the request is invalid.
+            400: If the ownership validation fails.
     """
     db_post: Post = Post(title=data.title,
                          description=data.description,
@@ -126,7 +182,7 @@ def create_new_post(data: CreatePost, db: Session = Depends(get_db),
 
 
 def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)) -> ResponsePost:
+                current_user: User = Depends(get_current_user)) -> UpdatePost:
     """
     Update an existing post.
 
@@ -157,7 +213,7 @@ def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
 
 
 def delete_post(title: str, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)) -> ResponsePost:
+                current_user: User = Depends(get_current_user)) -> DeletePost:
     """
     Delete a post owned by the authenticated user.
 
