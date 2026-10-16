@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from routers.posts import router as post_router
 from routers.users import router as user_router
+from routers.likes import router as like_router
 from fastapi.middleware.cors import CORSMiddleware
 from db.database import create_database
 
@@ -11,6 +12,7 @@ app = FastAPI(
 
 app.include_router(post_router)
 app.include_router(user_router)
+app.include_router(like_router)
 
 app.add_middleware(
     CORSMiddleware,
