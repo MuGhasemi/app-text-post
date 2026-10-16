@@ -2,8 +2,8 @@
    CONFIG
 ===================================================== */
 
-// const API_URL = "http://127.0.0.1:8000";
-const API_URL = "https://app-text-post.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
+// const API_URL = "https://app-text-post.onrender.com";
 
 
 /* =====================================================
@@ -602,7 +602,7 @@ async function loadHomePosts(search = null) {
                 data.detail || "Could not load posts"
             );
         }
-
+        await refreshLikedPostIds();
         renderPosts(container, data);
 
     } catch (error) {
@@ -645,7 +645,7 @@ async function loadExplorePosts(search = null) {
                 data.detail || "Could not load posts"
             );
         }
-
+        await refreshLikedPostIds();
         renderPosts(container, data);
 
     } catch (error) {
@@ -722,6 +722,18 @@ function renderPosts(container, posts) {
             post.owner?.username || "User";
         const avatarLetter =
             username.charAt(0).toUpperCase();
+        
+        const isOwner =
+            Boolean(
+                currentUsername &&
+                post.owner?.username === currentUsername
+            );
+
+        const isLiked =
+            getLikedPostIds().includes(String(post.id));
+
+        const likeCount =
+            Number(post.number_of_post_likes) || 0;
 
 
         card.innerHTML = `
@@ -764,15 +776,25 @@ function renderPosts(container, posts) {
             <div class="post-actions">
 
                 <button
-                    class="post-action"
-                    onclick="openPost('${encodeURIComponent(post.title)}')"
+                    class="post-action like-action ${isLiked ? "liked" : ""}"
+                    aria-label="${isLiked ? "Unlike post" : "Like post"}"
+                    aria-pressed="${isLiked}"
+                    onclick="toggleLike('${String(post.id)}', this)"
                 >
-                    View
+                    <span class="like-icon">${isLiked ? "♥" : "♡"}</span>
+                    <span class="like-count">${likeCount}</span>
                 </button>
 
                 ${
-                    currentUsername
+                    isOwner
                         ? `
+                        <button
+                            class="post-action"
+                            onclick="openPost('${encodeURIComponent(post.title)}')"
+                        >
+                            View
+                        </button>
+
                         <button
                             class="post-action"
                             onclick="openEditPost('${encodeURIComponent(post.title)}')"
@@ -799,6 +821,192 @@ function renderPosts(container, posts) {
 
     });
 
+}
+
+
+/* =====================================================
+   POST LIKES
+===================================================== */
+
+function getLikedPostIds() {
+    const storageKey = `liked_post_ids_${currentUsername || "guest"}`;
+
+    try {
+        const savedIds = JSON.parse(
+            localStorage.getItem(storageKey) || "[]"
+        );
+
+        return Array.isArray(savedIds)
+            ? savedIds.map(String)
+            : [];
+    } catch {
+        return [];
+    }
+}
+
+async function refreshLikedPostIds() {
+    if (!accessToken || !currentUsername) {
+        return;
+    }
+
+    const response = await fetch(`${API_URL}/likes/mine`, {
+        headers: {
+            "Authorization": `Bearer ${accessToken}`
+        }
+    });
+
+    if (response.status === 401) {
+        logout();
+        return;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.detail || "Could not load liked posts."
+        );
+    }
+
+    const storageKey = `liked_post_ids_${currentUsername}`;
+
+    localStorage.setItem(
+        storageKey,
+        JSON.stringify(data.map(String))
+    );
+}
+
+function saveLikedPostState(postId, isLiked) {
+    const storageKey = `liked_post_ids_${currentUsername || "guest"}`;
+    const likedIds = new Set(getLikedPostIds());
+
+    if (isLiked) {
+        likedIds.add(String(postId));
+    } else {
+        likedIds.delete(String(postId));
+    }
+
+    localStorage.setItem(
+        storageKey,
+        JSON.stringify([...likedIds])
+    );
+}
+
+
+async function sendLikeRequest(action, postId) {
+    return fetch(`${API_URL}/likes/${action}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+            post_id: postId
+        })
+    });
+}
+
+
+async function toggleLike(postId, button) {
+    if (!accessToken) {
+        showToast("Please login to like posts.");
+        return;
+    }
+
+    if (button.disabled) {
+        return;
+    }
+
+    button.disabled = true;
+
+    const countElement = button.querySelector(".like-count");
+    const currentlyLiked = button.classList.contains("liked");
+
+    let nextLikedState = !currentlyLiked;
+    let countDelta = nextLikedState ? 1 : -1;
+
+    try {
+        let response = await sendLikeRequest(
+            nextLikedState ? "like" : "unlike",
+            postId
+        );
+
+        let data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const detail = String(data.detail || "").toLowerCase();
+
+            // The post was already liked, but local state was outdated.
+            if (
+                nextLikedState &&
+                response.status === 400 &&
+                detail.includes("already liked")
+            ) {
+                nextLikedState = true;
+                countDelta = 0;
+            } else if (
+                !nextLikedState &&
+                response.status === 400 &&
+                detail.includes("have not liked")
+            ) {
+                // The saved local state was outdated.
+                response = await sendLikeRequest("like", postId);
+                data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail || "Could not like this post."
+                    );
+                }
+
+                nextLikedState = true;
+                countDelta = 1;
+            } else {
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                throw new Error(
+                    data.detail || "Could not update like."
+                );
+            }
+        }
+
+        button.classList.toggle("liked", nextLikedState);
+
+        button.setAttribute(
+            "aria-pressed",
+            String(nextLikedState)
+        );
+
+        button.setAttribute(
+            "aria-label",
+            nextLikedState ? "Unlike post" : "Like post"
+        );
+
+        const icon = button.querySelector(".like-icon");
+
+        if (icon) {
+            icon.textContent = nextLikedState ? "♥" : "♡";
+        }
+
+        if (countElement) {
+            const currentCount =
+                Number(countElement.textContent) || 0;
+
+            countElement.textContent = String(
+                Math.max(0, currentCount + countDelta)
+            );
+        }
+
+        saveLikedPostState(postId, nextLikedState);
+
+    } catch (error) {
+        showToast(error.message || "Could not update like.");
+    } finally {
+        button.disabled = false;
+    }
 }
 
 
