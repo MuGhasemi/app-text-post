@@ -6,6 +6,7 @@ from core.security import get_db, get_current_user
 from schemas.likes import LikePost, UnlikePost
 from uuid import UUID
 
+
 def like_post(data: LikePost, db: Session = Depends(get_db),
               current_user: User = Depends(get_current_user)) -> str | None:
     """
@@ -81,3 +82,24 @@ def number_of_post_likes(post_id: UUID, db: Session) -> int:
         int: Total number of likes for the specified post.
     """
     return db.query(Like).filter(Like.post_id == post_id).count()
+
+
+def get_current_user_liked_posts(db: Session = Depends(get_db),
+                       current_user: User = Depends(get_current_user),) -> list[UUID]:
+    """
+    Retrieve the IDs of posts liked by the authenticated user.
+
+    Args:
+        db (Session): Database session.
+        current_user (User): Authenticated user.
+
+    Returns:
+        list[UUID]: IDs of posts liked by the current user.
+    """
+    liked_post_ids = (
+        db.query(Like.post_id)
+        .filter(Like.owner_id == current_user.id)
+        .all()
+    )
+
+    return [post_id for (post_id,) in liked_post_ids]

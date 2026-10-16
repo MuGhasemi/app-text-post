@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from models.users import User
+from models.likes import Like
 from sqlalchemy.orm import Session
 from core.security import get_db, get_current_user
-from services.likes import like_post, unlike_post
+from services.likes import like_post, unlike_post, get_current_user_liked_posts
 from schemas.likes import LikePost, UnlikePost
+from uuid import UUID
 
 
 router: APIRouter = APIRouter(
@@ -52,3 +54,19 @@ def route_of_unlike_post(data: UnlikePost, db: Session = Depends(get_db),
             400: If the user has not liked the post.
     """
     return unlike_post(data, db, current_user)
+
+
+@router.get("/mine", response_model=list[UUID])
+def route_of_get_my_liked_posts(db: Session = Depends(get_db),
+                       current_user: User = Depends(get_current_user),) -> list[UUID]:
+    """
+    Retrieve the IDs of posts liked by the authenticated user.
+
+    Args:
+        db (Session): Database session.
+        current_user (User): Authenticated user.
+
+    Returns:
+        list[UUID]: IDs of posts liked by the current user.
+    """
+    return get_current_user_liked_posts(db, current_user)
