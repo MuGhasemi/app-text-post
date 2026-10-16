@@ -8,19 +8,21 @@ import uuid
 
 class User(Base):
     """
-    SQLAlchemy model representing a user.
+    SQLAlchemy model representing a user account.
 
-    A user can own multiple posts and contains
-    authentication and account information.
+    A user can own multiple posts and create multiple likes.
+    The model stores account credentials, account status,
+    and creation and update timestamps.
 
     Attributes:
         id (UUID): Unique identifier of the user.
         username (str): Unique username of the user.
-        hashed_password (str): Hashed user password.
-        is_active (bool): Indicates whether the user account is active.
-        created_at (datetime): Account creation timestamp.
-        updated_at (datetime): Last account update timestamp.
+        hashed_password (str): Hashed password used for authentication.
+        is_active (bool): Indicates whether the account is active.
+        created_at (datetime): Timestamp when the account was created.
+        updated_at (datetime): Timestamp when the account was last updated.
         items (list[Post]): Posts owned by the user.
+        likes (list[Like]): Likes created by the user.
     """
 
     __tablename__ = "users"
@@ -63,6 +65,12 @@ class User(Base):
 
     items = relationship(
         "Post",
+        back_populates="owner",
+        cascade="all, delete-orphan"
+    )
+
+    likes = relationship(
+        "Like",
         back_populates="owner",
         cascade="all, delete-orphan"
     )

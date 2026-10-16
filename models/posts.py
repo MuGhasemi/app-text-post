@@ -10,17 +10,19 @@ class Post(Base):
     """
     SQLAlchemy model representing a post.
 
-    A post belongs to one user and contains its title,
-    description, and creation and update timestamps.
+    Each post belongs to one user and can receive multiple likes.
+    The model stores the post's title, description, ownership,
+    and creation and update timestamps.
 
     Attributes:
         id (UUID): Unique identifier of the post.
         title (str): Title of the post.
         description (str): Content or description of the post.
-        created_at (datetime): Post creation timestamp.
-        updated_at (datetime): Last update timestamp.
-        owner_id (UUID): ID of the user who owns the post.
-        owner (User): User who owns the post.
+        created_at (datetime): Timestamp when the post was created.
+        updated_at (datetime): Timestamp when the post was last updated.
+        owner_id (UUID): Foreign key referencing the post owner's ID.
+        owner (User): Relationship to the user who owns the post.
+        likes (list[Like]): Likes associated with the post.
     """
 
     __tablename__ = "posts"
@@ -57,4 +59,10 @@ class Post(Base):
     owner = relationship(
         "User",
         back_populates="items"
+    )
+
+    likes = relationship(
+        "Like",
+        back_populates="post",
+        cascade="all, delete-orphan"
     )
