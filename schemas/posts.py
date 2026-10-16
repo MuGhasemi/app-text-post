@@ -45,6 +45,7 @@ class ResponsePost(BaseModel):
     title: str
     description: str
     owner: UserDisplay
+    number_of_post_likes: int
     created_at: datetime
     updated_at: datetime
 
@@ -64,5 +65,13 @@ class UpdatePost(BaseModel):
     """
     title: str | None = None
     description: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DeletePost(BaseModel):
+    """
+    Schema for deleting a post.
+    """
 
     model_config = ConfigDict(from_attributes=True)

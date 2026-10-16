@@ -1,16 +1,4 @@
-from pydantic import BaseModel
-
-
-class CreateUser(BaseModel):
-    """
-    Schema for user registration.
-
-    Attributes:
-        username (str): User username.
-        password (str): Plain-text password.
-    """
-    username: str
-    password: str
+from pydantic import BaseModel, ConfigDict
 
 
 class UserProfile(BaseModel):
@@ -22,6 +10,18 @@ class UserProfile(BaseModel):
     """
     username: str
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CreateUser(UserProfile):
+    """
+    Schema for user registration.
+
+    Attributes:
+        password (str): Plain-text password.
+    """
+    password: str
+
 
 class UpdateUser(BaseModel):
     """
@@ -31,6 +31,8 @@ class UpdateUser(BaseModel):
         username (str): New username.
     """
     username: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
@@ -43,3 +45,5 @@ class Token(BaseModel):
     """
     access_token: str
     token_type: str
+
+    model_config = ConfigDict(from_attributes=True)
