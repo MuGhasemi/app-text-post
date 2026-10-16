@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from schemas.posts import ResponsePost, CreatePost, UpdatePost
+from schemas.posts import ResponsePost, CreatePost, UpdatePost, DeletePost
 from sqlalchemy.orm import Session
 from models.posts import Post
 from models.users import User
@@ -48,7 +48,7 @@ def route_of_get_all_posts_current_user(search: str | None = None, db: Session =
 
 @router.get("/{title}", status_code=status.HTTP_200_OK, response_model=ResponsePost)
 def route_of_get_post_by_title(title: str, db: Session = Depends(get_db),
-                               current_user: User = Depends(get_current_user)) -> ResponsePost:
+                               current_user: User = Depends(get_current_user)):
     """
     Handle requests for retrieving a post by title.
 
@@ -63,9 +63,9 @@ def route_of_get_post_by_title(title: str, db: Session = Depends(get_db),
     return get_post_by_title(title, db, current_user)
 
 
-@router.post("/new", response_model=ResponsePost, status_code=status.HTTP_201_CREATED)
+@router.post("/new", response_model=CreatePost, status_code=status.HTTP_201_CREATED)
 def route_of_create_new_post(data: CreatePost, db: Session = Depends(get_db),
-                             current_user: User = Depends(get_current_user)) -> ResponsePost:
+                             current_user: User = Depends(get_current_user)):
     """
     Handle requests for creating a new post.
 
@@ -80,9 +80,9 @@ def route_of_create_new_post(data: CreatePost, db: Session = Depends(get_db),
     return create_new_post(data, db, current_user)
 
 
-@router.put("/{title}", response_model=ResponsePost, status_code=status.HTTP_200_OK)
+@router.put("/{title}", response_model=UpdatePost, status_code=status.HTTP_200_OK)
 def route_of_update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
-                         current_user: User = Depends(get_current_user)) -> ResponsePost:
+                         current_user: User = Depends(get_current_user)):
     """
     Handle requests for updating an existing post.
 
@@ -98,9 +98,9 @@ def route_of_update_post(title: str, data: UpdatePost, db: Session = Depends(get
     return update_post(title, data, db, current_user)
 
 
-@router.delete("/{title}", response_model=ResponsePost, status_code=status.HTTP_200_OK)
+@router.delete("/{title}", response_model=DeletePost, status_code=status.HTTP_200_OK)
 def route_of_delete_post(title: str, db: Session = Depends(get_db),
-                         current_user: User = Depends(get_current_user)) -> ResponsePost:
+                         current_user: User = Depends(get_current_user)):
     """
     Handle requests for deleting a post.
 
