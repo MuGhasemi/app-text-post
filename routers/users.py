@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from schemas.users import CreateUser, Token, UserProfile, UpdateUser
+from fastapi import APIRouter, Depends, status
+from schemas.users import CreateUser, Token, UserProfile, UpdateUser, UserHomePage
 from sqlalchemy.orm import Session
 from models.users import User
 from dependencies import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from core.security import oauth2_scheme, get_current_user
 from services.users import (sign_up, login, logout,
-                            get_user_detail, update_user_detail)
+                            get_user_detail, update_user_detail, user_home_page)
 
 router: APIRouter = APIRouter(
     prefix="/user",
@@ -95,3 +95,27 @@ def route_of_update_user_detail(data: UpdateUser, db: Session = Depends(get_db),
         UserProfile: Updated user profile.
     """
     return update_user_detail(data, db, current_user)
+
+
+@router.get("/home", response_model=UserHomePage,  status_code=status.HTTP_200_OK)
+def route_of_user_home_page(db: Session = Depends(get_db),
+                            current_user: User = Depends(get_current_user)):
+    """
+    Return the authenticated user's home page data.
+
+    This endpoint retrieves the user's profile and posts, then returns
+    them in a response that follows the UserHomePage schema.
+
+    Args:
+        db (Session): The database session provided by dependency injection.
+        current_user (User): The authenticated user provided by the
+            authentication dependency.
+
+    Returns:
+        UserHomePage: The user's profile and list of posts.
+
+    Raises:
+        HTTPException: If authentication fails or a required resource
+            cannot be retrieved.
+    """
+    return user_home_page(db, current_user)
