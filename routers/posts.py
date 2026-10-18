@@ -26,24 +26,23 @@ def route_of_explore(search: str | None = None, db: Session = Depends(get_db)):
     Returns:
         list[Post]: List of public posts.
     """
-    return explore(search, db)
+    return explore(db, search)
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=list[ResponsePost])
-def route_of_get_all_posts_current_user(search: str | None = None, db: Session = Depends(get_db),
+def route_of_get_all_posts_current_user(db: Session = Depends(get_db),
                                         current_user: User = Depends(get_current_user)):
     """
     Handle requests for retrieving the current user's posts.
 
     Args:
-        search (str | None): Optional post title to search for.
         db (Session): Database session.
         current_user (User): Authenticated user.
 
     Returns:
         list[Post]: Posts owned by the current user.
     """
-    return get_all_posts_current_user(search, db, current_user)
+    return get_all_posts_current_user(db, current_user)
 
 
 @router.get("/{title}", status_code=status.HTTP_200_OK, response_model=ResponsePost)
