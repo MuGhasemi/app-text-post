@@ -2,18 +2,16 @@ from fastapi import Depends, HTTPException, status
 from schemas.users import CreateUser, UserProfile, UpdateUser
 from sqlalchemy.orm import Session
 from models.users import User
-from dependencies import get_db
 from fastapi.security import OAuth2PasswordRequestForm
+from services.posts import get_all_posts_current_user
 from core.security import (verify_password,
                            create_access_token,
                            hash_password,
                            get_user,
-                           get_current_user,
-                           oauth2_scheme,
                            BLACKLISTED_TOKENS)
 
 
-def sign_up(data: CreateUser, db: Session = Depends(get_db)) -> UserProfile:
+def sign_up(data: CreateUser, db: Session) -> UserProfile:
     """
         Register a new user.
 
@@ -40,7 +38,7 @@ def sign_up(data: CreateUser, db: Session = Depends(get_db)) -> UserProfile:
     return db_user
 
 
-def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)) -> dict[str, str]:
+def login(data: OAuth2PasswordRequestForm, db: Session) -> dict[str, str]:
     """
     Authenticate a user and generate an access token.
 
@@ -68,7 +66,7 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
             "token_type": "bearer"}
 
 
-def logout(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
+def logout(token: str) -> dict[str, str]:
     """
     Log out the current user.
 
@@ -84,8 +82,7 @@ def logout(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
     return {"message": "Logged out successfully"}
 
 
-def get_user_detail(db: Session = Depends(get_db),
-                    current_user: User = Depends(get_current_user)) -> UserProfile:
+def get_user_detail(db: Session, current_user: User) -> UserProfile:
     """
     Retrieve the authenticated user's profile.
 
@@ -107,8 +104,7 @@ def get_user_detail(db: Session = Depends(get_db),
     return db_user
 
 
-def update_user_detail(data: UpdateUser, db: Session = Depends(get_db),
-                       current_user: User = Depends(get_current_user)) -> UserProfile:
+def update_user_detail(data: UpdateUser, db: Session, current_user: User) -> UserProfile:
     """
     Update user profile information.
 
@@ -128,3 +124,24 @@ def update_user_detail(data: UpdateUser, db: Session = Depends(get_db),
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def user_home_page(db: Session, current_user: User):
+    """
+    Collect the current user's profile and posts for the home page.
+
+    Args:
+        db (Session): The database session used to retrieve user data.
+        current_user (User): The authenticated user whose data is requested.
+
+    Returns:
+        dict: A dictionary containing the user's profile and posts.
+            - profile: The current user's profile information.
+            - posts: A list of the current user's posts.
+    """
+    user_profile_detail: UserProfile = get_user_detail(db, current_user)
+    user_posts_detail: list[dict] = get_all_posts_current_user(db, current_user)
+    return {
+        "profile": user_profile_detail,
+        "posts": user_posts_detail
+    }
