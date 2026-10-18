@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from schemas.posts import ResponsePost
 
 
 class UserProfile(BaseModel):
@@ -45,5 +46,19 @@ class Token(BaseModel):
     """
     access_token: str
     token_type: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserHomePage(BaseModel):
+    """
+    Schema for the authenticated user's home page response.
+
+    Attributes:
+        profile (UserProfile): The current user's profile information.
+        posts (list[ResponsePost]): A list of posts created by the current user.
+    """
+    profile: UserProfile
+    posts: list[ResponsePost]
 
     model_config = ConfigDict(from_attributes=True)
