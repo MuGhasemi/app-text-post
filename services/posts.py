@@ -1,11 +1,9 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from schemas.posts import CreatePost, UpdatePost, DeletePost
 from sqlalchemy.orm import Session
 from models.posts import Post
 from models.users import User
 from models.likes import Like
-from dependencies import get_db
-from core.security import get_current_user
 from sqlalchemy import func
 from services.likes import number_of_post_likes
 
@@ -38,7 +36,7 @@ def format_posts_with_likes(rows) -> list[dict[str, int]]:
     ]
 
 
-def explore(search: str | None = None, db: Session = Depends(get_db)) -> list[dict[str, int]]:
+def explore(db: Session, search: str | None = None) -> list[dict[str, int]]:
     """
     Retrieve public posts with their like counts.
 
@@ -78,17 +76,13 @@ def explore(search: str | None = None, db: Session = Depends(get_db)) -> list[di
     return format_posts_with_likes(rows)
 
 
-def get_all_posts_current_user(search: str | None = None,
-                               db: Session = Depends(get_db),
-                               current_user: User = Depends(get_current_user)) -> list[dict[str, int]]:
+def get_all_posts_current_user(db: Session, current_user: User) -> list[dict[str, int]]:
     """
     Retrieve posts owned by the authenticated user.
 
-    Optionally filter posts by an exact title match.
     Include the like count for each post.
 
     Args:
-        search (str | None): Optional exact title filter.
         db (Session): Database session.
         current_user (User): Authenticated user.
 
@@ -99,31 +93,18 @@ def get_all_posts_current_user(search: str | None = None,
         HTTPException:
             404: If no matching posts are found.
     """
-    query = (
-        db.query(
-            Post,
-            func.count(Like.id).label("number_of_post_likes"),
-        )
-        .outerjoin(Like, Like.post_id == Post.id)
-        .filter(Post.owner_id == current_user.id)
-    )
-
-    if search is not None:
-        query = query.filter(Post.title == search)
-
+    query = db.query(Post, func.count(Like.id).label("number_of_post_likes"),
+                     ).outerjoin(Like, Like.post_id == Post.id).filter(Post.owner_id == current_user.id)
     rows = query.group_by(Post.id).all()
-
     if not rows:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Not Posts!",
         )
-
     return format_posts_with_likes(rows)
 
 
-def get_post_by_title(title: str, db: Session = Depends(get_db),
-                      current_user: User = Depends(get_current_user)):
+def get_post_by_title(title: str, db: Session,current_user: User):
     """
     Retrieve a post owned by the authenticated user.
 
@@ -149,8 +130,7 @@ def get_post_by_title(title: str, db: Session = Depends(get_db),
     return format_posts_with_likes([(post, number_of_post_likes(post.id, db))])[0] # type: ignore
 
 
-def create_new_post(data: CreatePost, db: Session = Depends(get_db),
-                    current_user: User = Depends(get_current_user)) -> CreatePost:
+def create_new_post(data: CreatePost, db: Session,current_user: User) -> CreatePost:
     """
     Create a new post for the authenticated user.
 
@@ -181,8 +161,7 @@ def create_new_post(data: CreatePost, db: Session = Depends(get_db),
     return db_post
 
 
-def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)) -> UpdatePost:
+def update_post(title: str, data: UpdatePost, db: Session,current_user: User) -> UpdatePost:
     """
     Update an existing post.
 
@@ -212,8 +191,7 @@ def update_post(title: str, data: UpdatePost, db: Session = Depends(get_db),
     return post
 
 
-def delete_post(title: str, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)) -> DeletePost:
+def delete_post(title: str, db: Session,current_user: User) -> DeletePost:
     """
     Delete a post owned by the authenticated user.
 
