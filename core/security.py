@@ -5,12 +5,13 @@ from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer
 from models.users import User
 from dependencies import get_db
+from db.database import settings
 import jwt
 
 
 pwd_context = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
-SECRET_KEY = "J+5Nw+gWUmDUZIbNqDkdKyKqL3A+OWRUCUyl+jH8pGE"
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 BLACKLISTED_TOKENS = set()
