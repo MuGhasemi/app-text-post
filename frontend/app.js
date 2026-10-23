@@ -1493,16 +1493,15 @@ document
 
 document
     .getElementById("refresh-home")
-    .addEventListener("click", loadHomePage);
-
+    .addEventListener("click", () => {
+        loadHomePage();
+    });
 
 document
     .getElementById("refresh-explore")
-    .addEventListener(
-        "click",
-        loadExplorePosts
-    );
-
+    .addEventListener("click", () => {
+        loadExplorePosts();
+    });
 
 /* =====================================================
    HELPERS
