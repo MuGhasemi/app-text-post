@@ -96,11 +96,11 @@ def get_all_posts_current_user(db: Session, current_user: User) -> list[dict[str
     query = db.query(Post, func.count(Like.id).label("number_of_post_likes"),
                      ).outerjoin(Like, Like.post_id == Post.id).filter(Post.owner_id == current_user.id)
     rows = query.group_by(Post.id).all()
-    if not rows:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not Posts!",
-        )
+    # if not rows:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="Not Posts!",
+    #     )
     return format_posts_with_likes(rows)
 
 
