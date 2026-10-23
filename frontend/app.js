@@ -2,8 +2,8 @@
    CONFIG
 ===================================================== */
 
-// const API_URL = "http://127.0.0.1:8000";
-const API_URL = "https://app-text-post.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
+// const API_URL = "https://app-text-post.onrender.com";
 
 
 /* =====================================================
@@ -655,6 +655,7 @@ async function loadHomePage() {
 
     try {
         const response = await fetch(`${API_URL}/user/home`, {
+            method: "GET",
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
@@ -673,33 +674,49 @@ async function loadHomePage() {
             );
         }
 
+        // Check the profile data before using it.
+        if (!data.profile || !data.profile.username) {
+            throw new Error(
+                "The server returned invalid profile data."
+            );
+        }
+
         const profile = data.profile;
-        const posts = data.posts || [];
+        const posts = Array.isArray(data.posts)
+            ? data.posts
+            : [];
+
+        // Display the profile.
+        const username = profile.username;
 
         document.getElementById("home-username").textContent =
-            profile.username;
+            username;
 
         document.getElementById("home-username-handle").textContent =
-            `@${profile.username}`;
+            `@${username}`;
 
         document.getElementById("home-avatar").textContent =
-            profile.username.charAt(0).toUpperCase();
+            username.charAt(0).toUpperCase();
 
         document.getElementById("home-post-count").textContent =
             posts.length;
 
-        // These counts are placeholders until follow features exist.
-        document.getElementById("home-following-count").textContent = "0";
-        document.getElementById("home-followers-count").textContent = "0";
+        // These counts are placeholders.
+        document.getElementById("home-following-count").textContent =
+            "0";
 
-        // Keep the username in sync with the backend.
-        currentUsername = profile.username;
+        document.getElementById("home-followers-count").textContent =
+            "0";
 
-        localStorage.setItem("username", currentUsername);
+        // Keep the local username in sync with the server.
+        currentUsername = username;
+
+        localStorage.setItem("username", username);
 
         document.getElementById("current-username").textContent =
-            currentUsername.charAt(0).toUpperCase();
+            username.charAt(0).toUpperCase();
 
+        // Render the posts, even when the list is empty.
         await refreshLikedPostIds();
 
         renderPosts(container, posts);
@@ -1476,10 +1493,7 @@ document
 
 document
     .getElementById("refresh-home")
-    .addEventListener(
-        "click",
-        loadHomePosts
-    );
+    .addEventListener("click", loadHomePage);
 
 
 document
@@ -1620,8 +1634,7 @@ function resetCreateForm() {
 if (accessToken) {
 
     showApp();
-
-    loadHomePosts();
+    navigateTo("home");
 
 } else {
 
