@@ -30,27 +30,45 @@ const profileContent = document.getElementById("profile-content");
 
 
 /* =====================================================
+
+=====================================================*/ 
+
+function showLoginPage() {
+    if (accessToken) {
+        showApp();
+        return;
+    }
+
+    appPage.classList.add("hidden");
+    signupPage.classList.add("hidden");
+    loginPage.classList.remove("hidden");
+}
+
+
+function showSignupPage() {
+    if (accessToken) {
+        showApp();
+        return;
+    }
+
+    appPage.classList.add("hidden");
+    loginPage.classList.add("hidden");
+    signupPage.classList.remove("hidden");
+}
+
+
+/* =====================================================
    AUTH UI
 ===================================================== */
 
 document
     .getElementById("show-signup")
-    .addEventListener("click", () => {
-
-        loginPage.classList.add("hidden");
-        signupPage.classList.remove("hidden");
-
-    });
+    .addEventListener("click", showSignupPage);
 
 
 document
     .getElementById("show-login")
-    .addEventListener("click", () => {
-
-        signupPage.classList.add("hidden");
-        loginPage.classList.remove("hidden");
-
-    });
+    .addEventListener("click", showLoginPage);
 
 
 /* =====================================================
@@ -127,7 +145,7 @@ document
 
             showApp();
 
-            loadHomePosts();
+            navigateTo("home");
 
         } catch (error) {
 
@@ -221,14 +239,40 @@ function showApp() {
 
     appPage.classList.remove("hidden");
 
-    document
-        .getElementById("current-username")
-        .textContent =
-        currentUsername
+    const isLoggedIn = Boolean(accessToken);
+
+    document.getElementById("new-post-button")
+        .classList.toggle("hidden", !isLoggedIn);
+
+    document.getElementById("logout-button")
+        .classList.toggle("hidden", !isLoggedIn);
+
+    document.getElementById("guest-actions")
+        .classList.toggle("hidden", isLoggedIn);
+
+    document.getElementById("current-username").textContent =
+    currentUsername
             ? currentUsername.charAt(0).toUpperCase()
-            : "U";
+            : "G";
 }
 
+function showLoginPage() {
+    appPage.classList.add("hidden");
+    signupPage.classList.add("hidden");
+    loginPage.classList.remove("hidden");
+}
+
+function showSignupPage() {
+    appPage.classList.add("hidden");
+    loginPage.classList.add("hidden");
+    signupPage.classList.remove("hidden");
+}
+
+document.getElementById("guest-login-button")
+    .addEventListener("click", showLoginPage);
+
+document.getElementById("guest-signup-button")
+    .addEventListener("click", showSignupPage);
 
 /* =====================================================
    LOGOUT
@@ -246,62 +290,49 @@ document
    NAVIGATION
 ===================================================== */
 
-let currentPage = "home";
+let currentPage = "explore";
 
-document
-    .querySelectorAll(".nav-item")
-    .forEach(button => {
+function navigateTo(page) {
+    if (page === "home" && !accessToken) {
+        showToast("Please login to view your home page.");
+        showLoginPage();
+        return;
+    }
 
-        button.addEventListener("click", () => {
+    currentPage = page;
 
-            const page = button.dataset.page;
-            
-            currentPage = page  
+    hideAllContent();
 
-            setActiveNav(button);
-
-            hideAllContent();
-
-            if (page === "home") {
-
-                homeContent.classList.remove("hidden");
-
-                loadHomePosts();
-
-            }
-
-            if (page === "explore") {
-
-                exploreContent.classList.remove("hidden");
-
-                loadExplorePosts();
-
-            }
-
-            if (page === "profile") {
-
-                profileContent.classList.remove("hidden");
-
-                loadProfile();
-            }
-        });
-
+    document.querySelectorAll(".nav-item").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.page === page
+        );
     });
 
+    if (page === "home") {
 
-function setActiveNav(activeButton) {
+        homeContent.classList.remove("hidden");
 
-    document
-        .querySelectorAll(".nav-item")
-        .forEach(button => {
+        loadHomePage();
 
-            button.classList.remove("active");
+    }
 
-        });
+    if (page === "explore") {
 
-    activeButton.classList.add("active");
+        exploreContent.classList.remove("hidden");
+
+        loadExplorePosts();
+
+    }
 }
 
+document.querySelectorAll(".nav-item").forEach(button => {
+    button.addEventListener("click", () => {
+        navigateTo(button.dataset.page);
+
+    });
+});
 
 function hideAllContent() {
 
@@ -309,10 +340,60 @@ function hideAllContent() {
     exploreContent.classList.add("hidden");
     newPostContent.classList.add("hidden");
     postDetailContent.classList.add("hidden");
-    profileContent.classList.add("hidden");
 
+    // Support existing code if the old profile section remains.
+    if (profileContent) {
+        profileContent.classList.add("hidden");
+
+    }
 }
 
+
+/* =====================================================
+   TEXTPOST LOGO NAVIGATION
+===================================================== */
+
+function openExplore() {
+
+    loginPage.classList.add("hidden");
+    signupPage.classList.add("hidden");
+    appPage.classList.remove("hidden");
+
+    // Update buttons for guests and logged-in users.
+    showApp();
+
+    currentPage = "explore";
+
+    hideAllContent();
+    exploreContent.classList.remove("hidden");
+
+    document.querySelectorAll(".nav-item").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.page === "explore"
+        );
+    });
+
+    loadExplorePosts();
+}
+
+// Handle mouse clicks and keyboard activation.
+document.querySelectorAll(".app-logo").forEach(logo => {
+
+    logo.style.cursor = "pointer";
+
+    logo.addEventListener("click", openExplore);
+
+    logo.addEventListener("keydown", event => {
+
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openExplore();
+        }
+
+    });
+
+});
 
 /* =====================================================
    PROFILE
@@ -545,7 +626,7 @@ document
 
             homeContent.classList.remove("hidden");
 
-            loadHomePosts();
+            navigateTo("home");
 
 
         } catch (error) {
@@ -558,59 +639,77 @@ document
 
 
 /* =====================================================
-   HOME POSTS
+   HOME PAGE
 ===================================================== */
 
-async function loadHomePosts(search = null) {
+async function loadHomePage() {
+    if (!accessToken) {
+        showLoginPage();
+        return;
+    }
 
-    const container =
-        document.getElementById("home-posts");
+    const container = document.getElementById("home-posts");
 
     container.innerHTML =
-        `<div class="loading">Loading posts...</div>`;
+        '<div class="loading">Loading your profile...</div>';
 
     try {
-
-        let url = `${API_URL}/posts`;
-
-        if (search) {
-            url += `?search=${encodeURIComponent(search)}`;
-        }
-
-        const response = await fetch(
-            url,
-            {
-                headers: {
-                    "Authorization":
-                        `Bearer ${accessToken}`
-                }
+        const response = await fetch(`${API_URL}/user/home`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
             }
-        );
+        });
 
         const data = await response.json();
 
         if (!response.ok) {
-
             if (response.status === 401) {
-
-                logout();
-
+                await logout();
                 return;
             }
 
             throw new Error(
-                data.detail || "Could not load posts"
+                data.detail || "Could not load your home page."
             );
         }
+
+        const profile = data.profile;
+        const posts = data.posts || [];
+
+        document.getElementById("home-username").textContent =
+            profile.username;
+
+        document.getElementById("home-username-handle").textContent =
+            `@${profile.username}`;
+
+        document.getElementById("home-avatar").textContent =
+            profile.username.charAt(0).toUpperCase();
+
+        document.getElementById("home-post-count").textContent =
+            posts.length;
+
+        // These counts are placeholders until follow features exist.
+        document.getElementById("home-following-count").textContent = "0";
+        document.getElementById("home-followers-count").textContent = "0";
+
+        // Keep the username in sync with the backend.
+        currentUsername = profile.username;
+
+        localStorage.setItem("username", currentUsername);
+
+        document.getElementById("current-username").textContent =
+            currentUsername.charAt(0).toUpperCase();
+
         await refreshLikedPostIds();
-        renderPosts(container, data);
+
+        renderPosts(container, posts);
 
     } catch (error) {
-
-        container.innerHTML =
-            `<div class="empty-state">
-                ${error.message}
-            </div>`;
+        container.innerHTML = `
+            <div class="empty-state">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
     }
 }
 
@@ -678,12 +777,6 @@ searchInput.addEventListener("keydown", function(event) {
     if (currentPage === "explore") {
 
         loadExplorePosts(search || null);
-
-    }
-
-    if (currentPage === "home") {
-
-        loadHomePosts(search || null);
 
     }
 
@@ -909,9 +1002,11 @@ async function sendLikeRequest(action, postId) {
 
 async function toggleLike(postId, button) {
     if (!accessToken) {
-        showToast("Please login to like posts.");
-        return;
-    }
+    loginPage.classList.remove("hidden");
+    signupPage.classList.add("hidden");
+    appPage.classList.add("hidden");
+    return;
+}
 
     if (button.disabled) {
         return;
@@ -1206,7 +1301,7 @@ async function updatePost(oldTitle) {
 
         homeContent.classList.remove("hidden");
 
-        loadHomePosts();
+        navigateTo("home");
 
 
     } catch (error) {
@@ -1270,7 +1365,7 @@ async function deletePost(encodedTitle) {
 
         showToast("Post deleted.");
 
-        loadHomePosts();
+        navigateTo("home");
 
 
     } catch (error) {
@@ -1370,7 +1465,7 @@ document
 
         homeContent.classList.remove("hidden");
 
-        loadHomePosts();
+        navigateTo("home");
 
     });
 
@@ -1450,53 +1545,51 @@ function showToast(message) {
 
 
 async function logout() {
+    const tokenToRevoke = accessToken;
+    let serverLogoutSucceeded = !tokenToRevoke;
 
     try {
-
-        if (accessToken) {
-
-            await fetch(
+        if (tokenToRevoke) {
+            const response = await fetch(
                 `${API_URL}/user/logout`,
                 {
                     method: "POST",
-
                     headers: {
-                        "Authorization":
-                            `Bearer ${accessToken}`
+                        "Authorization": `Bearer ${tokenToRevoke}`
                     }
                 }
             );
 
+            if (!response.ok) {
+                throw new Error(
+                    `Server logout failed: ${response.status}`
+                );
+            }
+
+            serverLogoutSucceeded = true;
         }
-
     } catch (error) {
-
-        console.error(
-            "Logout request failed:",
-            error
-        );
-
+        console.error("Logout request failed:", error);
     } finally {
-
-        localStorage.removeItem(
-            "access_token"
-        );
-
-        localStorage.removeItem(
-            "username"
-        );
+        // پاک کردن اطلاعات ورود از مرورگر
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("username");
 
         accessToken = null;
         currentUsername = null;
 
+        // نمایش صفحه ورود
         appPage.classList.add("hidden");
-
+        signupPage.classList.add("hidden");
         loginPage.classList.remove("hidden");
 
-        document
-            .getElementById("login-form")
-            .reset();
+        document.getElementById("login-form").reset();
+    }
 
+    if (!serverLogoutSucceeded) {
+        showToast(
+            "Logged out locally, but server logout could not be confirmed."
+        );
     }
 }
 
@@ -1532,6 +1625,6 @@ if (accessToken) {
 
 } else {
 
-    loginPage.classList.remove("hidden");
+    openExplore();
 
 }

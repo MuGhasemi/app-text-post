@@ -21,7 +21,7 @@
 
         <div class="auth-card">
 
-            <div class="logo">
+            <div class="logo app-logo" role="button" tabindex="0">
                 <span class="logo-icon">✦</span>
                 <span>TextPost</span>
             </div>
@@ -80,7 +80,7 @@
 
         <div class="auth-card">
 
-            <div class="logo">
+            <div class="logo app-logo" role="button" tabindex="0">
                 <span class="logo-icon">✦</span>
                 <span>TextPost</span>
             </div>
@@ -137,28 +137,21 @@
 
         <aside class="sidebar">
 
-            <div class="sidebar-logo">
+            <div class="sidebar-logo app-logo" role="button" tabindex="0">
                 <span class="logo-icon">✦</span>
                 <span>TextPost</span>
             </div>
 
             <nav>
-
-                <button class="nav-item active" data-page="home">
+                <button class="nav-item" data-page="home">
                     <span>⌂</span>
                     Home
                 </button>
 
-                <button class="nav-item" data-page="explore">
+                <button class="nav-item active" data-page="explore">
                     <span>⌕</span>
                     Explore
                 </button>
-
-                <button class="nav-item" data-page="profile">
-                    <span>◎</span>
-                    Profile
-                </button>
-
             </nav>
 
             <div class="sidebar-bottom">
@@ -172,6 +165,16 @@
                     Logout
                 </button>
 
+                <div id="guest-actions" class="guest-actions hidden">
+                    <button id="guest-login-button" class="new-post-button">
+                        Login
+                    </button>
+
+                    <button id="guest-signup-button" class="logout-button">
+                        Sign up
+                    </button>
+                </div>
+
             </div>
 
         </aside>
@@ -183,9 +186,9 @@
 
             <header class="topbar">
 
-                <div class="mobile-logo">
+                <div class="mobile-logo app-logo" role="button" tabindex="0">
                     <span class="logo-icon">✦</span>
-                    TextPost
+                    <span>TextPost</span>
                 </div>
 
                 <div class="search-box">
@@ -208,12 +211,12 @@
 
             <!-- ================= HOME ================= -->
 
-            <section id="home-content" class="content-page">
+            <section id="home-content" class="content-page hidden">
 
                 <div class="page-heading">
                     <div>
-                        <h1>Your Posts</h1>
-                        <p>Your latest thoughts and posts.</p>
+                        <h1>Home</h1>
+                        <p>Your profile and posts.</p>
                     </div>
 
                     <button class="small-button" id="refresh-home">
@@ -221,12 +224,50 @@
                     </button>
                 </div>
 
-                <div id="home-posts" class="posts-container">
+                <div class="profile-header-card">
 
-                    <div class="loading">
-                        Loading posts...
+                    <div class="profile-cover"></div>
+
+                    <div class="profile-header-body">
+
+                        <div class="profile-avatar" id="home-avatar">
+                            U
+                        </div>
+
+                        <div class="profile-identity">
+                            <h2 id="home-username">Loading...</h2>
+                            <p id="home-username-handle"></p>
+                        </div>
+
+                        <div class="profile-stats">
+
+                            <div class="profile-stat">
+                                <strong id="home-post-count">0</strong>
+                                <span>Posts</span>
+                            </div>
+
+                            <div class="profile-stat">
+                                <strong id="home-following-count">0</strong>
+                                <span>Following</span>
+                            </div>
+
+                            <div class="profile-stat">
+                                <strong id="home-followers-count">0</strong>
+                                <span>Followers</span>
+                            </div>
+
+                        </div>
+
                     </div>
 
+                </div>
+
+                <div class="profile-posts-heading">
+                    <h2>Posts</h2>
+                </div>
+
+                <div id="home-posts" class="posts-container">
+                    <div class="loading">Loading posts...</div>
                 </div>
 
             </section>
